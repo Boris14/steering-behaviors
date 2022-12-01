@@ -11,16 +11,16 @@ function createBoid()
     
     steering = (SEPARATION_FORCE * SeparationSteer(boid, boid.perceivedBoids) + 
                 COHESION_FORCE * CohesionSteer(boid, boid.perceivedBoids) + 
-                ALIGNMENT_FORCE * AlignmentSteer(boid, boid.perceivedBoids)
-                ):limit(boid.maxForce)
+                ALIGNMENT_FORCE * AlignmentSteer(boid, boid.perceivedBoids)) * FORCE_MULTIPLIER
+    steering:limit(boid.maxForce)
  
-    boid.acceleration = steering
+    boid.applySteering(steering)
     
     boid.velocity = boid.velocity + boid.acceleration
     boid.velocity:limit(boid.maxSpeed)
-    if(boid.velocity:getmag() < BOID_MINSPEED) then boid.velocity:setmag(BOID_MINSPEED) end
     boid.position = boid.position + boid.velocity * dt
     boid.forward = boid.velocity:clone():norm()
+    boid.right = boid.forward:clone():rotate(math.pi/2)
     boid.orientation = boid.velocity:heading()
   end
   
@@ -43,11 +43,18 @@ function createBoid()
                       boid.position.x + rightVector.x, boid.position.y + rightVector.y}
     
     love.graphics.polygon("fill", vertices)
-    love.graphics.circle("line", boid.position.x, boid.position.y, boid.perception)
-    love.graphics.setFont(font)
-    love.graphics.setColor(1, .6, 0)
-    love.graphics.print(#boid.perceivedBoids, boid.position.x, boid.position.y)
-    love.graphics.setColor(1, 1, 1)
+    --Draw the Perception of the Boid as a circle
+    --love.graphics.circle("line", boid.position.x, boid.position.y, boid.perception)
+  end
+  
+  boid.applySteering = function(steering)
+    if (boid.forward:dot(steering) >= 0) then
+      boid.acceleration = steering
+    else
+      local steeringMultiplier = 1
+      if boid.right:dot(steering) < 0 then steeringMultiplier = -1 end
+      boid.acceleration = boid.right:clone():setmag(steering:getmag()) * steeringMultiplier
+    end
   end
   
   
@@ -57,9 +64,10 @@ function createBoid()
   boid.maxForce = BOID_MAXFORCE
   boid.size = BOID_SIZE
   boid.perception = BOID_PERCEPTION
-  boid.speed = BOID_MAXSPEED
+  boid.speed = boid.maxSpeed
   boid.velocity = (vector.random()):setmag(boid.speed)
   boid.forward = boid.velocity:clone():norm()
+  boid.right = boid.forward:clone():rotate(math.pi/2)
   boid.orientation = boid.velocity:heading() --in Radians (0 means heading right ->)
   boid.acceleration = vector(0, 0)
   boid.perceivedBoids = {}
