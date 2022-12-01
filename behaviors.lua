@@ -44,3 +44,39 @@ function AlignmentSteer(boid, otherBoids)
   return steering:norm()
 end
 
+
+function Seek(boid, target)
+  local steering = vector(0, 0)
+  steering = (target - boid.position):clone():norm() * boid.speed
+  steering = steering - boid.velocity
+  return steering
+end
+
+function Flee(boid, target)
+  local steering = vector(0, 0)
+  steering = (boid.position - target):clone():norm() * boid.speed
+  steering = steering - boid.velocity
+  return steering
+end
+
+function Arrival(boid, target)
+  local steering = vector(0, 0)
+  local offset = target - boid.position
+  local distance = offset:getmag()
+  steering = offset:norm() * boid.maxSpeed * distance / (boid.perception * 0.6)
+  steering = steering - boid.velocity
+  return steering
+end
+
+function Wander(boid)
+  local steering = vector(0, 0)
+  local wanderCircleCenter = boid.position + boid.forward * WANDER_STRENGTH_CIRCLE_DISTANCE
+  if(boid.wanderTarget == vector(0, 0)) then
+    boid.wanderTarget = wanderCircleCenter + vector.random():norm() * WANDER_STRENGTH_CIRCLE_RADIUS
+  else
+    boid.wanderTarget = boid.wanderTarget + vector.random():norm() * WANDER_RATE_CIRCLE_RADIUS
+    local newWanderTargetOffset = (boid.wanderTarget - wanderCircleCenter):setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
+    boid.wanderTarget = wanderCircleCenter + newWanderTargetOffset
+  end
+  return Arrival(boid, boid.wanderTarget)
+end

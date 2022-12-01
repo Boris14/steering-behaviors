@@ -6,15 +6,40 @@ function createBoid()
   --Create the new boid as a table
   local boid = {}
   
+  --Add the boids attributes
+  boid.position = vector(love.graphics.getWidth() * math.random(), love.graphics.getHeight() * math.random())
+  boid.maxSpeed = BOID_MAXSPEED
+  boid.maxForce = BOID_MAXFORCE
+  boid.size = BOID_SIZE
+  boid.perception = BOID_PERCEPTION
+  boid.speed = boid.maxSpeed
+  boid.velocity = (vector.random()):setmag(boid.speed)
+  boid.forward = boid.velocity:clone():norm()
+  boid.right = boid.forward:clone():rotate(math.pi/2)
+  boid.orientation = boid.velocity:heading() --in Radians (0 means heading right ->)
+  boid.acceleration = vector(0, 0)
+  boid.perceivedBoids = {}
+
+  boid.wanderTarget = vector(0, 0)
+  
   --Define the boids methods
   boid.update = function(dt)
-    
+    local steering = vector(0, 0) 
     steering = (SEPARATION_FORCE * SeparationSteer(boid, boid.perceivedBoids) + 
                 COHESION_FORCE * CohesionSteer(boid, boid.perceivedBoids) + 
                 ALIGNMENT_FORCE * AlignmentSteer(boid, boid.perceivedBoids)) * FORCE_MULTIPLIER
+              
+    for i, v in ipairs(boid.perceivedBoids) do
+      if(v.isPlayer) then
+        steering = Arrival(boid, v.position)
+      end
+    end
+    
+    steering = Wander(boid)
+              
     steering:limit(boid.maxForce)
  
-    boid.applySteering(steering)
+    boid.applySteering(steering, true)
     
     boid.velocity = boid.velocity + boid.acceleration
     boid.velocity:limit(boid.maxSpeed)
@@ -24,7 +49,7 @@ function createBoid()
     boid.orientation = boid.velocity:heading()
   end
   
-  boid.draw = function ()
+  boid.draw = function()
     --[[  Draw the boid as a triangle (coordinates being its center)
           Firstly, the directions for the vertices vectors are calculated when 
           the boid's angle is 0 (heading right)                                   ]]--
@@ -42,13 +67,19 @@ function createBoid()
                       boid.position.x + forwardVector.x, boid.position.y + forwardVector.y, 
                       boid.position.x + rightVector.x, boid.position.y + rightVector.y}
     
+    love.graphics.setColor(1, 1, 1)
     love.graphics.polygon("fill", vertices)
     --Draw the Perception of the Boid as a circle
     --love.graphics.circle("line", boid.position.x, boid.position.y, boid.perception)
+    love.graphics.setColor(1, 0, 0)
+    love.graphics.circle("fill", boid.wanderTarget.x, boid.wanderTarget.y, WANDER_RATE_CIRCLE_RADIUS)
+    local wanderCircleCenter = boid.position + boid.forward * WANDER_STRENGTH_CIRCLE_DISTANCE
+    love.graphics.setColor(0, 1, 0)
+    love.graphics.circle("line", wanderCircleCenter.x, wanderCircleCenter.y, WANDER_STRENGTH_CIRCLE_RADIUS)
   end
   
-  boid.applySteering = function(steering)
-    if (boid.forward:dot(steering) >= 0) then
+  boid.applySteering = function(steering, allowBreaking)
+    if(allowBreaking or boid.forward:dot(steering) >= 0) then
       boid.acceleration = steering
     else
       local steeringMultiplier = 1
@@ -56,21 +87,6 @@ function createBoid()
       boid.acceleration = boid.right:clone():setmag(steering:getmag()) * steeringMultiplier
     end
   end
-  
-  
-  --Set the boids attributes
-  boid.position = vector(love.graphics.getWidth() * math.random(), love.graphics.getHeight() * math.random())
-  boid.maxSpeed = BOID_MAXSPEED
-  boid.maxForce = BOID_MAXFORCE
-  boid.size = BOID_SIZE
-  boid.perception = BOID_PERCEPTION
-  boid.speed = boid.maxSpeed
-  boid.velocity = (vector.random()):setmag(boid.speed)
-  boid.forward = boid.velocity:clone():norm()
-  boid.right = boid.forward:clone():rotate(math.pi/2)
-  boid.orientation = boid.velocity:heading() --in Radians (0 means heading right ->)
-  boid.acceleration = vector(0, 0)
-  boid.perceivedBoids = {}
   
   return boid
 end
@@ -99,14 +115,12 @@ end
 
 
 function getPerceivedBoids(allBoids, boid)
-  result = {}
-  
+  local result = {}
   for i, v in ipairs(allBoids) do
     if (v.position - boid.position):getmag() <= boid.perception and v ~= boid then
       table.insert(result, v)
     end
   end
-  
   return result
 end
 
