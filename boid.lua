@@ -19,7 +19,6 @@ function createBoid()
   boid.orientation = boid.velocity:heading() --in Radians (0 means heading right ->)
   boid.acceleration = vector(0, 0)
   boid.perceivedBoids = {}
-
   boid.wanderTarget = vector(0, 0)
   
   --Define the boids methods
@@ -29,14 +28,14 @@ function createBoid()
                 COHESION_FORCE * CohesionSteer(boid, boid.perceivedBoids) + 
                 ALIGNMENT_FORCE * AlignmentSteer(boid, boid.perceivedBoids)) * FORCE_MULTIPLIER
               
-    for i, v in ipairs(boid.perceivedBoids) do
+    --[[for i, v in ipairs(boid.perceivedBoids) do
       if(v.isPlayer) then
         steering = Arrival(boid, v.position)
       end
-    end
+    end]]--
     
     steering = Wander(boid)
-              
+
     steering:limit(boid.maxForce)
  
     boid.applySteering(steering, true)
@@ -69,13 +68,16 @@ function createBoid()
     
     love.graphics.setColor(1, 1, 1)
     love.graphics.polygon("fill", vertices)
+    
     --Draw the Perception of the Boid as a circle
     --love.graphics.circle("line", boid.position.x, boid.position.y, boid.perception)
+    
+    --Draw the Wander circle
+    --[[local wanderCircleCenter = boid.position + boid.forward * WANDER_STRENGTH_CIRCLE_DISTANCE
     love.graphics.setColor(1, 0, 0)
-    love.graphics.circle("fill", boid.wanderTarget.x, boid.wanderTarget.y, WANDER_RATE_CIRCLE_RADIUS)
-    local wanderCircleCenter = boid.position + boid.forward * WANDER_STRENGTH_CIRCLE_DISTANCE
+    love.graphics.circle("fill", (boid.wanderTarget + wanderCircleCenter).x, (boid.wanderTarget + wanderCircleCenter).y, 5)
     love.graphics.setColor(0, 1, 0)
-    love.graphics.circle("line", wanderCircleCenter.x, wanderCircleCenter.y, WANDER_STRENGTH_CIRCLE_RADIUS)
+    love.graphics.circle("line", wanderCircleCenter.x, wanderCircleCenter.y, WANDER_STRENGTH_CIRCLE_RADIUS)]]--
   end
   
   boid.applySteering = function(steering, allowBreaking)

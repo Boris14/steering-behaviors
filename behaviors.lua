@@ -72,11 +72,11 @@ function Wander(boid)
   local steering = vector(0, 0)
   local wanderCircleCenter = boid.position + boid.forward * WANDER_STRENGTH_CIRCLE_DISTANCE
   if(boid.wanderTarget == vector(0, 0)) then
-    boid.wanderTarget = wanderCircleCenter + vector.random():norm() * WANDER_STRENGTH_CIRCLE_RADIUS
+    boid.wanderTarget = vector.random():setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
   else
-    boid.wanderTarget = boid.wanderTarget + vector.random():norm() * WANDER_RATE_CIRCLE_RADIUS
-    local newWanderTargetOffset = (boid.wanderTarget - wanderCircleCenter):setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
-    boid.wanderTarget = wanderCircleCenter + newWanderTargetOffset
+    boid.wanderTarget:rotate(math.random(-1, 1) * WANDER_RATE_CIRCLE_RADIUS):setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
+    --boid.wanderTarget = boid.wanderTarget + vector.random():norm() * WANDER_RATE_CIRCLE_RADIUS
+    --local newWanderTargetOffset = (boid.wanderTarget - wanderCircleCenter):setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
   end
-  return Arrival(boid, boid.wanderTarget)
+  return Seek(boid, boid.wanderTarget + wanderCircleCenter)
 end
