@@ -1,6 +1,6 @@
 local vector = require("libraries.vector")
 
-function SeparationSteer(boid, otherBoids)
+function SeparationSteer(boid, otherBoids, normalized)
   local steering = vector(0, 0)
   
   if #otherBoids == 0 then return steering end
@@ -11,10 +11,11 @@ function SeparationSteer(boid, otherBoids)
     steering = steering + repulsiveForce:norm() / distance
   end
   
-  return steering:norm()
+  if normalized then return steering:norm() end
+  return steering
 end
 
-function CohesionSteer(boid, otherBoids)
+function CohesionSteer(boid, otherBoids, normalized)
   local steering = vector(0, 0)
   
   if #otherBoids == 0 then return steering end
@@ -26,10 +27,11 @@ function CohesionSteer(boid, otherBoids)
   steering = steering / #otherBoids
   steering = steering - boid.position
   
-  return steering:norm()
+  if normalized then return steering:norm() end
+  return steering
 end
 
-function AlignmentSteer(boid, otherBoids)
+function AlignmentSteer(boid, otherBoids, normalized)
   local steering = vector(0, 0)
   
   if #otherBoids == 0 then return steering end
@@ -41,9 +43,15 @@ function AlignmentSteer(boid, otherBoids)
   steering = steering / #otherBoids
   steering = steering - boid.forward
   
-  return steering:norm()
+  if normalized then return steering:norm() end
+  return steering
 end
 
+function FlockingSteer(boid)
+  return (SEPARATION_MULT * SeparationSteer(boid, boid.perceivedBoids, true) + 
+            COHESION_MULT * CohesionSteer(boid, boid.perceivedBoids, true) + 
+            ALIGNMENT_MULT * AlignmentSteer(boid, boid.perceivedBoids, true)) * FORCE_MULTIPLIER
+end
 
 function Seek(boid, target)
   local steering = vector(0, 0)
@@ -75,8 +83,10 @@ function Wander(boid)
     boid.wanderTarget = vector.random():setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
   else
     boid.wanderTarget:rotate(math.random(-1, 1) * WANDER_RATE_CIRCLE_RADIUS):setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
-    --boid.wanderTarget = boid.wanderTarget + vector.random():norm() * WANDER_RATE_CIRCLE_RADIUS
-    --local newWanderTargetOffset = (boid.wanderTarget - wanderCircleCenter):setmag(WANDER_STRENGTH_CIRCLE_RADIUS)
   end
   return Seek(boid, boid.wanderTarget + wanderCircleCenter)
+end
+
+function FollowLeader(boid, otherBoids, leader)
+  
 end

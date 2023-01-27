@@ -31,7 +31,9 @@ function createPlayer()
   end
   
   player.draw = function()
+    love.graphics.setColor(1, 0, 0)
     love.graphics.circle("fill", player.position.x, player.position.y, player.size)
+    love.graphics.setColor(1, 1, 1)
   end
   
     

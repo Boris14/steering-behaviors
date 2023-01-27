@@ -16,7 +16,6 @@ function createBoid()
   boid.velocity = (vector.random()):setmag(boid.speed)
   boid.forward = boid.velocity:clone():norm()
   boid.right = boid.forward:clone():rotate(math.pi/2)
-  boid.orientation = boid.velocity:heading() --in Radians (0 means heading right ->)
   boid.acceleration = vector(0, 0)
   boid.perceivedBoids = {}
   boid.wanderTarget = vector(0, 0)
@@ -24,18 +23,17 @@ function createBoid()
   --Define the boids methods
   boid.update = function(dt)
     local steering = vector(0, 0) 
-    steering = (SEPARATION_FORCE * SeparationSteer(boid, boid.perceivedBoids) + 
-                COHESION_FORCE * CohesionSteer(boid, boid.perceivedBoids) + 
-                ALIGNMENT_FORCE * AlignmentSteer(boid, boid.perceivedBoids)) * FORCE_MULTIPLIER
-              
-    --[[for i, v in ipairs(boid.perceivedBoids) do
-      if(v.isPlayer) then
-        steering = Arrival(boid, v.position)
-      end
-    end]]--
     
+    --steering = FlockingSteer(boid)
     steering = Wander(boid)
-
+    
+    if player then
+      --steering = Arrival(boid, player.position)
+    end
+    
+    --Doesn't work :/
+    --steering = steering + SeparationSteer(boid, boid.perceivedBoids)
+    
     steering:limit(boid.maxForce)
  
     boid.applySteering(steering, true)
@@ -45,7 +43,6 @@ function createBoid()
     boid.position = boid.position + boid.velocity * dt
     boid.forward = boid.velocity:clone():norm()
     boid.right = boid.forward:clone():rotate(math.pi/2)
-    boid.orientation = boid.velocity:heading()
   end
   
   boid.draw = function()
@@ -58,9 +55,10 @@ function createBoid()
     local forwardVector = vector(triangleHeight, 0)
     
     --Rotate the vertices vectors 
-    rightVector:rotate(boid.orientation)
-    leftVector:rotate(boid.orientation)
-    forwardVector:rotate(boid.orientation)
+    local angle = boid.forward:heading()
+    rightVector:rotate(angle)
+    leftVector:rotate(angle)
+    forwardVector:rotate(angle)
     
     local vertices = {boid.position.x + leftVector.x, boid.position.y + leftVector.y, 
                       boid.position.x + forwardVector.x, boid.position.y + forwardVector.y, 
