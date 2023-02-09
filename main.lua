@@ -7,7 +7,11 @@ require("player")
 
 Made the player separate from the other boids (global variable)
 
-This really helps: https://gamedevelopment.tutsplus.com/series/understanding-steering-behaviors--gamedev-12732 
+This really helps:
+
+https://gamedevelopment.tutsplus.com/series/understanding-steering-behaviors--gamedev-12732 
+https://github.com/mcnorwalk/vector.lua
+https://www.red3d.com/cwr/steer/gdc99/
 
 TO DO:
 - Make Leader following behaviour. For some reason the separation doesn't work I think.
@@ -26,7 +30,7 @@ function love.keypressed(key)
 end
 
 function love.load()
-  love.window.setFullscreen(true)
+  --love.window.setFullscreen(true)
   font = love.graphics.newFont(20)
   boids = createBoids(BOIDS_COUNT)
 end

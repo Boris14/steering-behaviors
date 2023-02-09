@@ -1,6 +1,6 @@
 local vector = require("libraries.vector")
 
-function SeparationSteer(boid, otherBoids, normalized)
+function SeparationSteer(boid, otherBoids)
   local steering = vector(0, 0)
   
   if #otherBoids == 0 then return steering end
@@ -11,11 +11,10 @@ function SeparationSteer(boid, otherBoids, normalized)
     steering = steering + repulsiveForce:norm() / distance
   end
   
-  if normalized then return steering:norm() end
-  return steering
+  return steering:setmag(SEPARATION_MULT) 
 end
 
-function CohesionSteer(boid, otherBoids, normalized)
+function CohesionSteer(boid, otherBoids)
   local steering = vector(0, 0)
   
   if #otherBoids == 0 then return steering end
@@ -27,11 +26,10 @@ function CohesionSteer(boid, otherBoids, normalized)
   steering = steering / #otherBoids
   steering = steering - boid.position
   
-  if normalized then return steering:norm() end
-  return steering
+  return steering:setmag(COHESION_MULT)
 end
 
-function AlignmentSteer(boid, otherBoids, normalized)
+function AlignmentSteer(boid, otherBoids)
   local steering = vector(0, 0)
   
   if #otherBoids == 0 then return steering end
@@ -43,26 +41,25 @@ function AlignmentSteer(boid, otherBoids, normalized)
   steering = steering / #otherBoids
   steering = steering - boid.forward
   
-  if normalized then return steering:norm() end
-  return steering
+  return steering:setmag(ALIGNMENT_MULT)
 end
 
 function FlockingSteer(boid)
-  return (SEPARATION_MULT * SeparationSteer(boid, boid.perceivedBoids, true) + 
-            COHESION_MULT * CohesionSteer(boid, boid.perceivedBoids, true) + 
-            ALIGNMENT_MULT * AlignmentSteer(boid, boid.perceivedBoids, true)) * FORCE_MULTIPLIER
+  return (SeparationSteer(boid, boid.perceivedBoids) + 
+            CohesionSteer(boid, boid.perceivedBoids) + 
+            AlignmentSteer(boid, boid.perceivedBoids)) * FORCE_MULTIPLIER
 end
 
 function Seek(boid, target)
   local steering = vector(0, 0)
-  steering = (target - boid.position):clone():norm() * boid.speed
+  steering = (target - boid.position):clone():norm() * boid.maxSpeed
   steering = steering - boid.velocity
   return steering
 end
 
 function Flee(boid, target)
   local steering = vector(0, 0)
-  steering = (boid.position - target):clone():norm() * boid.speed
+  steering = (boid.position - target):clone():norm() * boid.maxSpeed
   steering = steering - boid.velocity
   return steering
 end
@@ -71,7 +68,10 @@ function Arrival(boid, target)
   local steering = vector(0, 0)
   local offset = target - boid.position
   local distance = offset:getmag()
-  steering = offset:norm() * boid.maxSpeed * distance / (boid.perception * 0.6)
+  --Used when the target is in slowing distance
+  local rampedSpeed = boid.maxSpeed * distance / (boid.perception * 0.6)
+  local speed = math.min(rampedSpeed, boid.maxSpeed)
+  steering = offset:norm() * speed
   steering = steering - boid.velocity
   return steering
 end
@@ -88,5 +88,18 @@ function Wander(boid)
 end
 
 function FollowLeader(boid, otherBoids, leader)
+  local steering = vector(0, 0)
+  --local behindTarget = leader.position - leader.forward * BEHIND_LEADER_DIST
+  local leaderAheadPoint = leader.position + leader.velocity
+  local target = leader.position + (boid.position - leader.position):setmag(LEADER_DISTANCE)
+  local distanceFromLeader = (leader.position - boid.position):getmag()
   
+  if (leaderAheadPoint - boid.position):getmag() < LEADER_DISTANCE or distanceFromLeader < LEADER_DISTANCE then
+    steering = steering + Flee(boid, leader.position)
+  elseif(boid.velocity:getmag() > 10 or distanceFromLeader > LEADER_DISTANCE + 5) then
+      steering = steering + Arrival(boid, target)
+      steering = steering + SeparationSteer(boid, otherBoids)
+  end
+
+  return steering
 end

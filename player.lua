@@ -25,7 +25,9 @@ function createPlayer()
     
     player.velocity = newVelocity
     player.position = player.position + player.velocity * dt
-    player.forward = player.velocity:clone():norm()
+    if(player.velocity:magSq() > ALMOST_ZERO) then
+      player.forward = player.velocity:clone():norm()
+    end
     player.right = player.forward:clone():rotate(math.pi/2)
     player.orientation = player.velocity:heading()
   end

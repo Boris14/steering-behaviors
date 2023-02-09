@@ -1,4 +1,3 @@
---https://github.com/mcnorwalk/vector.lua
 local vector = require("libraries.vector")
 require("behaviors")
 
@@ -28,11 +27,15 @@ function createBoid()
     steering = Wander(boid)
     
     if player then
-      --steering = Arrival(boid, player.position)
+      steering = FollowLeader(boid, boid.perceivedBoids, player)
     end
     
     --Doesn't work :/
-    --steering = steering + SeparationSteer(boid, boid.perceivedBoids)
+    local sep = SeparationSteer(boid, boid.perceivedBoids, true)
+   
+   -- print("mag: " .. sep:getmag())
+    --print("Steering mag: " .. steering:getmag())
+   -- steering = steering + sep * SEPARATION_MULT
     
     steering:limit(boid.maxForce)
  
@@ -41,7 +44,9 @@ function createBoid()
     boid.velocity = boid.velocity + boid.acceleration
     boid.velocity:limit(boid.maxSpeed)
     boid.position = boid.position + boid.velocity * dt
-    boid.forward = boid.velocity:clone():norm()
+    if(boid.velocity:magSq() > ALMOST_ZERO) then
+      boid.forward = boid.velocity:clone():norm()
+    end
     boid.right = boid.forward:clone():rotate(math.pi/2)
   end
   
