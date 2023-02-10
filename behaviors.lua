@@ -89,16 +89,22 @@ end
 
 function FollowLeader(boid, otherBoids, leader)
   local steering = vector(0, 0)
-  --local behindTarget = leader.position - leader.forward * BEHIND_LEADER_DIST
+  --local target = leader.position - leader.forward * LEADER_DISTANCE * 2
+  --print(leader.forward)
   local leaderAheadPoint = leader.position + leader.velocity
-  local target = leader.position + (boid.position - leader.position):setmag(LEADER_DISTANCE)
+  local target = leader.position + (boid.position - leader.position):setmag(LEADER_DISTANCE * 1.5)
   local distanceFromLeader = (leader.position - boid.position):getmag()
   
+  --Get out of the way of the leader
   if (leaderAheadPoint - boid.position):getmag() < LEADER_DISTANCE or distanceFromLeader < LEADER_DISTANCE then
     steering = steering + Flee(boid, leader.position)
-  elseif(boid.velocity:getmag() > 10 or distanceFromLeader > LEADER_DISTANCE + 5) then
-      steering = steering + Arrival(boid, target)
-      steering = steering + SeparationSteer(boid, otherBoids)
+  
+  --Follow leader
+  elseif (target - boid.position):getmag() > ARRIVE_DISTANCE then
+    steering = steering + Arrival(boid, target)
+    steering = steering + SeparationSteer(boid, otherBoids)
+  else
+    steering = -boid.velocity
   end
 
   return steering

@@ -30,18 +30,12 @@ function createBoid()
       steering = FollowLeader(boid, boid.perceivedBoids, player)
     end
     
-    --Doesn't work :/
-    local sep = SeparationSteer(boid, boid.perceivedBoids, true)
-   
-   -- print("mag: " .. sep:getmag())
-    --print("Steering mag: " .. steering:getmag())
-   -- steering = steering + sep * SEPARATION_MULT
-    
     steering:limit(boid.maxForce)
  
     boid.applySteering(steering, true)
     
-    boid.velocity = boid.velocity + boid.acceleration
+    --boid.velocity = boid.velocity + boid.acceleration
+    boid.velocity = lerp(boid.velocity, boid.velocity + boid.acceleration, dt * 20)
     boid.velocity:limit(boid.maxSpeed)
     boid.position = boid.position + boid.velocity * dt
     if(boid.velocity:magSq() > ALMOST_ZERO) then
@@ -141,4 +135,8 @@ function screenWarp(objectPosition)
   elseif (objectPosition.y < 0) then
     objectPosition.y = love.graphics.getHeight()
   end
+end
+
+function lerp(a, b, t)
+  return a * (1 - t) + b * t
 end
