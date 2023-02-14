@@ -14,8 +14,7 @@ https://github.com/mcnorwalk/vector.lua
 https://www.red3d.com/cwr/steer/gdc99/
 
 TO DO:
-- Make Leader following behaviour. For some reason the separation doesn't work I think.
-- Create other behaviour combinations
+- Create other behaviour combinations (obstacle avoidance maybe)
 
 ]]--
 
@@ -30,7 +29,7 @@ function love.keypressed(key)
 end
 
 function love.load()
-  --love.window.setFullscreen(true)
+  love.window.setFullscreen(true)
   font = love.graphics.newFont(20)
   boids = createBoids(BOIDS_COUNT)
 end

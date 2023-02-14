@@ -45,9 +45,9 @@ function AlignmentSteer(boid, otherBoids)
 end
 
 function FlockingSteer(boid)
-  return (SeparationSteer(boid, boid.perceivedBoids) + 
+  return SeparationSteer(boid, boid.perceivedBoids) + 
             CohesionSteer(boid, boid.perceivedBoids) + 
-            AlignmentSteer(boid, boid.perceivedBoids)) * FORCE_MULTIPLIER
+            AlignmentSteer(boid, boid.perceivedBoids)
 end
 
 function Seek(boid, target)
@@ -89,20 +89,26 @@ end
 
 function FollowLeader(boid, otherBoids, leader)
   local steering = vector(0, 0)
-  --local target = leader.position - leader.forward * LEADER_DISTANCE * 2
-  --print(leader.forward)
+  local target = leader.position + (boid.position - leader.position):setmag(LEADER_FOLLOW_DISTANCE)
+  --local target = leader.position - leader.forward * LEADER_FOLLOW_DISTANCE
   local leaderAheadPoint = leader.position + leader.velocity
-  local target = leader.position + (boid.position - leader.position):setmag(LEADER_DISTANCE * 1.5)
   local distanceFromLeader = (leader.position - boid.position):getmag()
   
-  --Get out of the way of the leader
-  if (leaderAheadPoint - boid.position):getmag() < LEADER_DISTANCE or distanceFromLeader < LEADER_DISTANCE then
+  local stoppedBoids = 0
+  for i, v in ipairs(otherBoids) do
+    if v.velocity:magSq() <= ALMOST_ZERO then stoppedBoids = stoppedBoids + 1 end
+  end
+  
+  --Get out of the way of the leader if you're too close
+  if (leaderAheadPoint - boid.position):getmag() < LEADER_CLEAR_DISTANCE or distanceFromLeader < LEADER_CLEAR_DISTANCE then
     steering = steering + Flee(boid, leader.position)
   
-  --Follow leader
-  elseif (target - boid.position):getmag() > ARRIVE_DISTANCE then
+  --Follow leader (multiply by stopped boids so they don't form a circle around the leader)
+  elseif (target - boid.position):getmag() > LEADER_ARRIVE_DISTANCE * (1 + stoppedBoids) then
     steering = steering + Arrival(boid, target)
     steering = steering + SeparationSteer(boid, otherBoids)
+    
+  --Stop if you're close enough
   else
     steering = -boid.velocity
   end

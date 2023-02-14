@@ -23,8 +23,9 @@ function createBoid()
   boid.update = function(dt)
     local steering = vector(0, 0) 
     
-    --steering = FlockingSteer(boid)
-    steering = Wander(boid)
+    steering = FlockingSteer(boid)
+    --steering = Wander(boid)
+    --steering = steering + SeparationSteer(boid, boid.perceivedBoids)
     
     if player then
       steering = FollowLeader(boid, boid.perceivedBoids, player)
